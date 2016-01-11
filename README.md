@@ -69,9 +69,9 @@ a result like this:
 ```
 RESULTS (top-5):
 ----------------
-score = 0.851581: n02510455 giant panda, panda, panda bear, coon bear, Ailuropoda melanoleuca (170)
-score = 0.013321: n02500267 indri, indris, Indri indri, Indri brevicaudatus (76)
-score = 0.003967: n02509815 lesser panda, red panda, panda, bear cat, cat bear, Ailurus fulgens (8)
-score = 0.001362: n13044778 earthstar (879)
-score = 0.001302: n07760859 custard apple (326)
+score = 0.847576: n02510455 giant panda, panda, panda bear, coon bear, Ailuropoda melanoleuca (170)
+score = 0.020494: n02500267 indri, indris, Indri indri, Indri brevicaudatus (76)
+score = 0.003694: n02509815 lesser panda, red panda, panda, bear cat, cat bear, Ailurus fulgens (8)
+score = 0.001323: n13044778 earthstar (879)
+score = 0.001301: n07760859 custard apple (326)
 ```

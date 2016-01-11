@@ -13,13 +13,13 @@ local input_dim = 299
 
 local load_image = function(path)
   local img   = image.load(path, 3)
-  local c,w,h = img:size(1), img:size(3), img:size(2)
+  local w, h  = img:size(3), img:size(2)
   local min   = math.min(w, h)
   img         = image.crop(img, 'c', min, min)
   img         = image.scale(img, input_dim)
   -- normalize image
   img:mul(255):add(-input_sub):mul(input_scale)
-  -- note that due to batch normalization, we are obliged to use unitary batches
+  -- due to batch normalization we must use minibatches
   return img:float():view(1, img:size(1), img:size(2), img:size(3))
 end
 
@@ -33,6 +33,7 @@ local args = pl.lapp [[
 if args.b == "cunn" then
   require "cunn"
 elseif args.b == "cudnn" then
+  require "cunn"
   require "cudnn"
 end
 
