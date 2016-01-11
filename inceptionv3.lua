@@ -1,6 +1,5 @@
 require 'torch'
 require 'nn'
-require 'cunn'
 local hdf5 = require 'hdf5'
 local pl = require('pl.import_into')()
 torch.setdefaulttensortype('torch.FloatTensor')
@@ -19,23 +18,21 @@ local args = pl.lapp [[
 -- modules to be attached to a specific backend
 local SpatialConvolution
 local SpatialMaxPooling
-local SpatialAveragePooling
 local ReLU
 local SoftMax
 if args.b == "nn" or args.b == "cunn" then
   SpatialConvolution = nn.SpatialConvolution
   SpatialMaxPooling = nn.SpatialMaxPooling
-  SpatialAveragePooling = nn.SpatialAveragePooling
   ReLU = nn.ReLU
   SoftMax = nn.SoftMax
   if args.b == "cunn" then
     require "cunn"
   end
 elseif args.b == "cudnn" then
+  require "cunn"
   require "cudnn"
   SpatialConvolution = cudnn.SpatialConvolution
   SpatialMaxPooling = cudnn.SpatialMaxPooling
-  SpatialAveragePooling = cudnn.SpatialAveragePooling
   ReLU = cudnn.ReLU
   SoftMax = cudnn.SoftMax
 else
@@ -63,16 +60,13 @@ local function ConvBN(gname, net)
   conv.bias:zero()
   net:add(conv)
 
-  local bn = nn.SpatialBatchNormalization(och, nil, nil, true)
+  local bn = nn.SpatialBatchNormalization(och, std_epsilon, nil, true)
   local beta = h5f:read("beta"):all()
   local gamma = h5f:read("gamma"):all()
   local mean = h5f:read("mean"):all()
   local std = h5f:read("std"):all()
   bn.running_mean:copy(mean)
-  -- TensorFlow standard deviation is passed by sqrt() and inversion in forward-time
-  -- while in nn.SpatialBatchNormalization is pre-calculated
-  std:add(std_epsilon):sqrt():pow(-1)
-  bn.running_std:copy(std)
+  bn.running_var:copy(std)
   bn.weight:copy(gamma)
   bn.bias:copy(beta)
   net:add(bn)
@@ -95,9 +89,10 @@ local function Pool(gname, net)
   else
     print(string.format("%s(Avg): (%dx%d), strides (%d, %d), padding (%d, %d)",
       gname, ksize[3], ksize[2], strides[3], strides[2], padding[2], padding[1]))
-    local m = SpatialAveragePooling(ksize[3], ksize[2], strides[3], strides[2], padding[2], padding[1])
-    m.count_include_pad = false
-    net:add(m)
+    net:add(nn.SpatialAveragePooling(
+      ksize[3], ksize[2],
+      strides[3], strides[2],
+      padding[2], padding[1]):setCountExcludePad())
   end
 end
 
