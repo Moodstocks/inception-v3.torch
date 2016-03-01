@@ -20,21 +20,25 @@ local SpatialConvolution
 local SpatialMaxPooling
 local ReLU
 local SoftMax
+local SpatialBatchNormalization
 if args.b == "nn" or args.b == "cunn" then
   SpatialConvolution = nn.SpatialConvolution
   SpatialMaxPooling = nn.SpatialMaxPooling
   ReLU = nn.ReLU
   SoftMax = nn.SoftMax
+  SpatialBatchNormalization = nn.SpatialBatchNormalization
   if args.b == "cunn" then
     require "cunn"
   end
 elseif args.b == "cudnn" then
   require "cunn"
   require "cudnn"
+  assert(cudnn.version >= 4000, "cuDNN v4 or higher is required")
   SpatialConvolution = cudnn.SpatialConvolution
   SpatialMaxPooling = cudnn.SpatialMaxPooling
   ReLU = cudnn.ReLU
   SoftMax = cudnn.SoftMax
+  SpatialBatchNormalization = cudnn.SpatialBatchNormalization
 else
   error("Unknown backend "..args.b)
 end
@@ -57,16 +61,24 @@ local function ConvBN(gname, net)
   local conv = SpatialConvolution(ich, och, kW, kH, strides[3], strides[2], padding[2], padding[1])
   conv.weight:copy(weights)
   -- IMPORTANT: there are no biases in the convolutions
-  conv.bias:zero()
+  if args.b == "cudnn" then
+    conv:noBias()
+  else
+    conv.bias:zero()
+  end
   net:add(conv)
 
-  local bn = nn.SpatialBatchNormalization(och, std_epsilon, nil, true)
+  local bn = SpatialBatchNormalization(och, std_epsilon, nil, true)
   local beta = h5f:read("beta"):all()
   local gamma = h5f:read("gamma"):all()
   local mean = h5f:read("mean"):all()
   local std = h5f:read("std"):all()
   bn.running_mean:copy(mean)
-  bn.running_var:copy(std)
+  if args.b == "cudnn" then
+    bn.running_std:copy(std:add(std_epsilon):sqrt():pow(-1))
+  else
+    bn.running_var:copy(std)
+  end
   bn.weight:copy(gamma)
   bn.bias:copy(beta)
   net:add(bn)
