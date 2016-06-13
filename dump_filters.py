@@ -69,7 +69,7 @@ def dump_convbn(sess, gname):
   beta = sess.graph.get_tensor_by_name(gname + '/batchnorm/beta:0').eval()
   gamma = sess.graph.get_tensor_by_name(gname + '/batchnorm/gamma:0').eval()
   mean = sess.graph.get_tensor_by_name(gname + '/batchnorm/moving_mean:0').eval()
-  std = sess.graph.get_tensor_by_name(gname + '/batchnorm/moving_variance:0').eval()
+  var = sess.graph.get_tensor_by_name(gname + '/batchnorm/moving_variance:0').eval()
 
   gname = gname.replace("/", "_")
   h5f = h5py.File('dump/'+gname+'.h5', 'w')
@@ -79,7 +79,7 @@ def dump_convbn(sess, gname):
   h5f.create_dataset("beta", data=beta)
   h5f.create_dataset("gamma", data=gamma)
   h5f.create_dataset("mean", data=mean)
-  h5f.create_dataset("std", data=std)
+  h5f.create_dataset("var", data=var)
   h5f.close()
 
 def dump_pool(sess, gname):

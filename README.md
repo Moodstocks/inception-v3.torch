@@ -23,7 +23,7 @@ docker run -it \
 -p 8888:8888 \
 -v /home/myuser/code/inception-v3.torch/dump_filters.py:/root/dump_filters.py \
 -v /home/myuser/data/dump:/root/dump \
-b.gcr.io/tensorflow/tensorflow
+gcr.io/tensorflow/tensorflow
 
 # From the container
 apt-get update
