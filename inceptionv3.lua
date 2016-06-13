@@ -33,7 +33,7 @@ if args.b == "nn" or args.b == "cunn" then
 elseif args.b == "cudnn" then
   require "cunn"
   require "cudnn"
-  assert(cudnn.version >= 4000, "cuDNN v4 or higher is required")
+  assert(cudnn.version >= 5000, "cuDNN v5 or higher is required")
   SpatialConvolution = cudnn.SpatialConvolution
   SpatialMaxPooling = cudnn.SpatialMaxPooling
   ReLU = cudnn.ReLU
@@ -60,25 +60,16 @@ local function ConvBN(gname, net)
 
   local conv = SpatialConvolution(ich, och, kW, kH, strides[3], strides[2], padding[2], padding[1])
   conv.weight:copy(weights)
-  -- IMPORTANT: there are no biases in the convolutions
-  if args.b == "cudnn" then
-    conv:noBias()
-  else
-    conv.bias:zero()
-  end
+  conv:noBias()
   net:add(conv)
 
   local bn = SpatialBatchNormalization(och, std_epsilon, nil, true)
   local beta = h5f:read("beta"):all()
   local gamma = h5f:read("gamma"):all()
   local mean = h5f:read("mean"):all()
-  local std = h5f:read("std"):all()
+  local var = h5f:read("var"):all()
   bn.running_mean:copy(mean)
-  if args.b == "cudnn" then
-    bn.running_std:copy(std:add(std_epsilon):sqrt():pow(-1))
-  else
-    bn.running_var:copy(std)
-  end
+  bn.running_var:copy(var)
   bn.weight:copy(gamma)
   bn.bias:copy(beta)
   net:add(bn)
